@@ -25,7 +25,12 @@ env.read_env()
 def start(update, context):
     products = get_products(env.str('STRAPI_API_TOKEN'))
     keyboard = [
-        [InlineKeyboardButton(product['title'], callback_data=str(product['id']))]
+        [
+            InlineKeyboardButton(
+                product['title'],
+                callback_data=str(product['id']),
+            )
+        ]
         for product in products['data']
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -46,6 +51,7 @@ def button(update, context):
         None,
     )
 
+    price = selected_product.get('price', 'Цена не указана')
     description = selected_product.get('description', 'Описание отсутствует')
     title = selected_product.get('title', 'Без названия')
 
@@ -59,11 +65,11 @@ def button(update, context):
             query.message.chat_id,
             image_url,
             env.str('STRAPI_API_TOKEN'),
-            caption=f'{title}\n\n{description}',
+            caption=f'{title} ({price} ₽/кг)\n\n{description}',
         )
         return 'START'
 
-    query.edit_message_text(text=f'{title}\n\n{description}')
+    query.edit_message_text(text=f'{title} ({price} ₽/кг)\n\n{description}')
     return 'START'
 
 
