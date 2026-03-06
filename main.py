@@ -54,6 +54,9 @@ def button(update, context):
     price = selected_product.get('price', 'Цена не указана')
     description = selected_product.get('description', 'Описание отсутствует')
     title = selected_product.get('title', 'Без названия')
+    back_markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton('Назад', callback_data='back')]]
+    )
 
     picture = selected_product.get('picture') or {}
     picture_url = picture.get('url')
@@ -66,14 +69,28 @@ def button(update, context):
             image_url,
             env.str('STRAPI_API_TOKEN'),
             caption=f'{title} ({price} ₽/кг)\n\n{description}',
+            reply_markup=back_markup,
         )
-        return 'START'
+        return 'HANDLE_DESCRIPTION'
 
-    query.edit_message_text(text=f'{title} ({price} ₽/кг)\n\n{description}')
-    return 'START'
+    query.edit_message_text(
+        text=f'{title} ({price} ₽/кг)\n\n{description}',
+        reply_markup=back_markup,
+    )
+    return 'HANDLE_DESCRIPTION'
 
 
-def send_product_photo(context, chat_id, image_url, token, caption=None):
+def handle_description(update, context):
+    query = update.callback_query
+    query.answer()
+    if query.data == 'back':
+        return start(update, context)
+    return 'HANDLE_DESCRIPTION'
+
+
+def send_product_photo(
+    context, chat_id, image_url, token, caption=None, reply_markup=None
+):
     headers = {'Authorization': f'bearer {token}'}
     response = requests.get(image_url, headers=headers)
     response.raise_for_status()
@@ -82,7 +99,12 @@ def send_product_photo(context, chat_id, image_url, token, caption=None):
     image.name = 'product.jpg'
     image.seek(0)
 
-    context.bot.send_photo(chat_id=chat_id, photo=image, caption=caption)
+    context.bot.send_photo(
+        chat_id=chat_id,
+        photo=image,
+        caption=caption,
+        reply_markup=reply_markup,
+    )
 
 
 def handle_users_reply(update, context):
@@ -94,8 +116,6 @@ def handle_users_reply(update, context):
 
     if update.message and update.message.text == '/start':
         user_state = 'START'
-    elif update.callback_query:
-        user_state = 'HANDLE_MENU'
     else:
         raw_state = db.get(chat_id)
         user_state = raw_state.decode('utf-8') if raw_state else 'START'
@@ -103,6 +123,7 @@ def handle_users_reply(update, context):
     states_functions = {
         'START': start,
         'HANDLE_MENU': button,
+        'HANDLE_DESCRIPTION': handle_description,
     }
     state_handler = states_functions[user_state]
     try:
