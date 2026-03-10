@@ -55,7 +55,15 @@ def button(update, context):
     description = selected_product.get('description', 'Описание отсутствует')
     title = selected_product.get('title', 'Без названия')
     back_markup = InlineKeyboardMarkup(
-        [[InlineKeyboardButton('Назад', callback_data='back')]]
+        [
+            [
+                InlineKeyboardButton(
+                    'Добавить в корзину',
+                    callback_data=f'add:{selected_product["id"]}',
+                )
+            ],
+            [InlineKeyboardButton('Назад', callback_data='back')],
+        ]
     )
 
     picture = selected_product.get('picture') or {}
@@ -82,9 +90,17 @@ def button(update, context):
 
 def handle_description(update, context):
     query = update.callback_query
-    query.answer()
+    if query.data.startswith('add:'):
+        get_or_create_cart(
+            env.str('STRAPI_API_TOKEN'),
+            query.message.chat_id,
+        )
+        query.answer()
+        return 'HANDLE_DESCRIPTION'
     if query.data == 'back':
+        query.answer()
         return start(update, context)
+    query.answer()
     return 'HANDLE_DESCRIPTION'
 
 
@@ -139,6 +155,31 @@ def get_products(token):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     return response.json()
+
+
+def get_or_create_cart(token, tg_id):
+    headers = {'Authorization': f'Bearer {token}'}
+    cart = get_cart_by_tg_id(headers, tg_id)
+    if not cart:
+        return create_cart(headers, tg_id)
+    return cart
+
+
+def get_cart_by_tg_id(headers, tg_id):
+    url = 'http://localhost:1337/api/carts'
+    params = {'filters[tg_id][$eq]': str(tg_id)}
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    carts = response.json().get('data') or []
+    return carts[0] if carts else None
+
+
+def create_cart(headers, tg_id):
+    url = 'http://localhost:1337/api/carts'
+    payload = {'data': {'tg_id': str(tg_id)}}
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()['data']
 
 
 def get_database_connection():
