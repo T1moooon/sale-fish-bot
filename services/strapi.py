@@ -107,3 +107,27 @@ def get_cart_items(token, tg_id):
     response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()
     return response.json().get('data') or []
+
+
+def remove_product_from_cart(token, tg_id, product_document_id):
+    headers = {'Authorization': f'Bearer {token}'}
+    cart = get_cart_by_tg_id(headers, tg_id)
+    if not cart:
+        return
+    cart_item = get_cart_item(headers, cart['documentId'], product_document_id)
+    if not cart_item:
+        return
+    delete_cart_item(headers, cart_item['documentId'])
+
+
+def clear_cart(token, tg_id):
+    headers = {'Authorization': f'Bearer {token}'}
+    cart_items = get_cart_items(token, tg_id)
+    for cart_item in cart_items:
+        delete_cart_item(headers, cart_item['documentId'])
+
+
+def delete_cart_item(headers, cart_item_document_id):
+    url = f'http://localhost:1337/api/cart-items/{cart_item_document_id}'
+    response = requests.delete(url, headers=headers)
+    response.raise_for_status()
