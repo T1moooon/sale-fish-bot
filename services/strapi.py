@@ -1,11 +1,9 @@
 import requests
 
-from config import env
-
 
 def get_products(token):
     headers = {'Authorization': f'bearer {token}'}
-    url = f'{env.str("STRAPI_BASE_URL", "http://localhost:1337")}/api/products'
+    url = 'http://localhost:1337/api/products'
     response = requests.get(url, headers=headers, params={'populate': 'picture'})
     response.raise_for_status()
     return response.json()
@@ -40,7 +38,7 @@ def add_product_to_cart(token, tg_id, product_document_id, quantity_kg=1.0):
 
 
 def get_cart_by_tg_id(headers, tg_id):
-    url = f'{env.str("STRAPI_BASE_URL", "http://localhost:1337")}/api/carts'
+    url = 'http://localhost:1337/api/carts'
     params = {'filters[tg_id][$eq]': str(tg_id)}
     response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()
@@ -49,7 +47,7 @@ def get_cart_by_tg_id(headers, tg_id):
 
 
 def create_cart(headers, tg_id):
-    url = f'{env.str("STRAPI_BASE_URL", "http://localhost:1337")}/api/carts'
+    url = 'http://localhost:1337/api/carts'
     payload = {'data': {'tg_id': str(tg_id)}}
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
@@ -57,7 +55,7 @@ def create_cart(headers, tg_id):
 
 
 def get_cart_item(headers, cart_document_id, product_document_id):
-    url = f'{env.str("STRAPI_BASE_URL", "http://localhost:1337")}/api/cart-items'
+    url = 'http://localhost:1337/api/cart-items'
     params = {
         'filters[cart][documentId][$eq]': cart_document_id,
         'filters[product][documentId][$eq]': product_document_id,
@@ -74,7 +72,7 @@ def create_cart_item(
     product_document_id,
     quantity_kg,
 ):
-    url = f'{env.str("STRAPI_BASE_URL", "http://localhost:1337")}/api/cart-items'
+    url = 'http://localhost:1337/api/cart-items'
     payload = {
         'data': {
             'quantity_kg': float(quantity_kg),
@@ -88,11 +86,24 @@ def create_cart_item(
 
 
 def update_cart_item(headers, cart_item_document_id, quantity_kg):
-    url = (
-        f'{env.str("STRAPI_BASE_URL", "http://localhost:1337")}'
-        f'/api/cart-items/{cart_item_document_id}'
-    )
+    url = f'http://localhost:1337/api/cart-items/{cart_item_document_id}'
     payload = {'data': {'quantity_kg': float(quantity_kg)}}
     response = requests.put(url, headers=headers, json=payload)
     response.raise_for_status()
     return response.json()['data']
+
+
+def get_cart_items(token, tg_id):
+    headers = {'Authorization': f'Bearer {token}'}
+    cart = get_cart_by_tg_id(headers, tg_id)
+    if not cart:
+        return []
+
+    url = 'http://localhost:1337/api/cart-items'
+    params = {
+        'filters[cart][documentId][$eq]': cart['documentId'],
+        'populate': 'product',
+    }
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    return response.json().get('data') or []

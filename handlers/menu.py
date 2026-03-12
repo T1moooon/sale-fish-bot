@@ -4,7 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import env
 from services.media import send_product_photo
-from services.strapi import add_product_to_cart, get_products
+from services.strapi import add_product_to_cart, get_cart_items, get_products
 from storage.redis_state import get_database_connection
 
 
@@ -22,6 +22,7 @@ def start(update, context):
         ]
         for product in products['data']
     ]
+    keyboard.append([InlineKeyboardButton('Моя корзина', callback_data='my_cart')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.effective_message.reply_text('Please choose:', reply_markup=reply_markup)
     return 'HANDLE_MENU'
@@ -29,6 +30,11 @@ def start(update, context):
 
 def button(update, context):
     query = update.callback_query
+    if query.data == 'my_cart':
+        query.answer()
+        query.message.reply_text(get_cart_text(query.message.chat_id))
+        return 'HANDLE_MENU'
+
     query.answer()
     products = get_products(env.str('STRAPI_API_TOKEN'))
     selected_product = next(
@@ -51,6 +57,7 @@ def button(update, context):
                     callback_data=f'add:{selected_product["documentId"]}',
                 )
             ],
+            [InlineKeyboardButton('Моя корзина', callback_data='my_cart')],
             [InlineKeyboardButton('Назад', callback_data='back')],
         ]
     )
@@ -81,6 +88,11 @@ def button(update, context):
 
 def handle_description(update, context):
     query = update.callback_query
+    if query.data == 'my_cart':
+        query.answer()
+        query.message.reply_text(get_cart_text(query.message.chat_id))
+        return 'HANDLE_DESCRIPTION'
+
     if query.data.startswith('add:'):
         product_document_id = query.data.split(':', 1)[1]
         add_product_to_cart(
@@ -95,6 +107,20 @@ def handle_description(update, context):
         return start(update, context)
     query.answer()
     return 'HANDLE_DESCRIPTION'
+
+
+def get_cart_text(chat_id):
+    cart_items = get_cart_items(env.str('STRAPI_API_TOKEN'), chat_id)
+    if not cart_items:
+        return 'Ваша корзина пуста'
+
+    lines = ['Ваша корзина:']
+    for index, item in enumerate(cart_items, start=1):
+        product = item.get('product') or {}
+        title = product.get('title')
+        quantity_kg = item.get('quantity_kg')
+        lines.append(f'{index}. {title} — {quantity_kg} кг')
+    return '\n'.join(lines)
 
 
 def handle_users_reply(update, context):
