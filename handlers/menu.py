@@ -205,7 +205,7 @@ def handle_cart(update, context):
 
 def handle_email(update, context):
     if not update.message or not update.message.text:
-        return 'HANDLE_WAITING_EMAIL'
+        return 'WAITING_EMAIL'
     email = update.message.text.strip()
     print(f'Email for payment: {email}')
     update.message.reply_text('Почта получена')
