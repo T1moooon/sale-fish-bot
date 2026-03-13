@@ -1,7 +1,7 @@
 import logging
 
 from bot import run_bot
-from config import env
+from config import TG_BOT_TOKEN
 
 
 if __name__ == '__main__':
@@ -9,5 +9,4 @@ if __name__ == '__main__':
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO,
     )
-    bot_token = env.str('TG_BOT_TOKEN')
-    run_bot(bot_token)
+    run_bot(TG_BOT_TOKEN)

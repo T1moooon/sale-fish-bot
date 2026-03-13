@@ -2,7 +2,7 @@ import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import env
+from config import STRAPI_API_TOKEN, STRAPI_BASE_URL
 from services.media import send_product_photo
 from services.strapi import (
     add_product_to_cart,
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def start(update, context):
-    products = get_products(env.str('STRAPI_API_TOKEN'))
+    products = get_products(STRAPI_API_TOKEN)
     keyboard = [
         [
             InlineKeyboardButton(
@@ -47,7 +47,7 @@ def button(update, context):
         return 'HANDLE_CART'
 
     query.answer()
-    products = get_products(env.str('STRAPI_API_TOKEN'))
+    products = get_products(STRAPI_API_TOKEN)
     selected_product = next(
         (
             product
@@ -80,12 +80,12 @@ def button(update, context):
     picture_url = picture.get('url')
 
     if picture_url:
-        image_url = f'http://localhost:1337{picture_url}'
+        image_url = f'{STRAPI_BASE_URL}{picture_url}'
         send_product_photo(
             context,
             query.message.chat_id,
             image_url,
-            env.str('STRAPI_API_TOKEN'),
+            STRAPI_API_TOKEN,
             caption=f'{title} ({price} ₽/кг)\n\n{description}',
             reply_markup=back_markup,
         )
@@ -110,7 +110,7 @@ def handle_description(update, context):
     if query.data.startswith('add:'):
         product_document_id = query.data.split(':', 1)[1]
         add_product_to_cart(
-            env.str('STRAPI_API_TOKEN'),
+            STRAPI_API_TOKEN,
             query.message.chat_id,
             product_document_id,
         )
@@ -124,7 +124,7 @@ def handle_description(update, context):
 
 
 def get_cart_text(chat_id):
-    cart_items = get_cart_items(env.str('STRAPI_API_TOKEN'), chat_id)
+    cart_items = get_cart_items(STRAPI_API_TOKEN, chat_id)
     if not cart_items:
         return 'Ваша корзина пуста'
 
@@ -163,7 +163,7 @@ def get_cart_keyboard(cart_items):
 def show_cart(query):
     if not query.message:
         return
-    cart_items = get_cart_items(env.str('STRAPI_API_TOKEN'), query.message.chat_id)
+    cart_items = get_cart_items(STRAPI_API_TOKEN, query.message.chat_id)
     query.message.reply_text(
         get_cart_text(query.message.chat_id),
         reply_markup=get_cart_keyboard(cart_items),
@@ -179,7 +179,7 @@ def handle_cart(update, context):
         return start(update, context)
 
     if query.data == 'clear_cart':
-        clear_cart(env.str('STRAPI_API_TOKEN'), query.message.chat_id)
+        clear_cart(STRAPI_API_TOKEN, query.message.chat_id)
         query.answer()
         show_cart(query)
         return 'HANDLE_CART'
@@ -192,7 +192,7 @@ def handle_cart(update, context):
     if query.data.startswith('remove:'):
         product_document_id = query.data.split(':', 1)[1]
         remove_product_from_cart(
-            env.str('STRAPI_API_TOKEN'),
+            STRAPI_API_TOKEN,
             query.message.chat_id,
             product_document_id,
         )
@@ -209,7 +209,7 @@ def handle_email(update, context):
         return 'WAITING_EMAIL'
     email = update.message.text.strip()
     save_order_email(
-        env.str('STRAPI_API_TOKEN'),
+        STRAPI_API_TOKEN,
         update.message.chat_id,
         email,
     )
