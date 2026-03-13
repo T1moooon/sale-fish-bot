@@ -2,11 +2,13 @@ import io
 
 import requests
 
+from services.strapi import build_auth_headers
+
 
 def send_product_photo(
     context, chat_id, image_url, token, caption=None, reply_markup=None
 ):
-    headers = {'Authorization': f'bearer {token}'}
+    headers = build_auth_headers(token)
     response = requests.get(image_url, headers=headers)
     response.raise_for_status()
 

@@ -33,7 +33,7 @@ def start(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     if not update.effective_message:
         return 'START'
-    update.effective_message.reply_text('Please choose:', reply_markup=reply_markup)
+    update.effective_message.reply_text('Товары:', reply_markup=reply_markup)
     return 'HANDLE_MENU'
 
 
