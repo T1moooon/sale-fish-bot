@@ -154,6 +154,7 @@ def get_cart_keyboard(cart_items):
     buttons.append(
         [InlineKeyboardButton('Очистить корзину', callback_data='clear_cart')]
     )
+    buttons.append([InlineKeyboardButton('Оплатить', callback_data='checkout')])
     buttons.append([InlineKeyboardButton('В меню', callback_data='to_menu')])
     return InlineKeyboardMarkup(buttons)
 
@@ -182,6 +183,11 @@ def handle_cart(update, context):
         show_cart(query)
         return 'HANDLE_CART'
 
+    if query.data == 'checkout':
+        query.answer()
+        query.message.reply_text('Введите вашу почту для оплаты:')
+        return 'WAITING_EMAIL'
+
     if query.data.startswith('remove:'):
         product_document_id = query.data.split(':', 1)[1]
         remove_product_from_cart(
@@ -194,6 +200,15 @@ def handle_cart(update, context):
         return 'HANDLE_CART'
 
     query.answer()
+    return 'HANDLE_CART'
+
+
+def handle_email(update, context):
+    if not update.message or not update.message.text:
+        return 'HANDLE_WAITING_EMAIL'
+    email = update.message.text.strip()
+    print(f'Email for payment: {email}')
+    update.message.reply_text('Почта получена')
     return 'HANDLE_CART'
 
 
@@ -215,6 +230,7 @@ def handle_users_reply(update, context):
         'HANDLE_MENU': button,
         'HANDLE_DESCRIPTION': handle_description,
         'HANDLE_CART': handle_cart,
+        'WAITING_EMAIL': handle_email,
     }
     state_handler = states_functions[user_state]
     try:
