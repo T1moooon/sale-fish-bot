@@ -131,3 +131,42 @@ def delete_cart_item(headers, cart_item_document_id):
     url = f'http://localhost:1337/api/cart-items/{cart_item_document_id}'
     response = requests.delete(url, headers=headers)
     response.raise_for_status()
+
+
+def save_order_email(token, tg_id, email):
+    headers = {'Authorization': f'Bearer {token}'}
+    cart = get_or_create_cart(token, tg_id)
+    order = get_order_by_cart_document_id(headers, cart['documentId'])
+    if order:
+        return update_order_email(headers, order['documentId'], email)
+    return create_order(headers, cart['documentId'], email)
+
+
+def get_order_by_cart_document_id(headers, cart_document_id):
+    url = 'http://localhost:1337/api/orders'
+    params = {'filters[cart][documentId][$eq]': cart_document_id}
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    orders = response.json().get('data') or []
+    return orders[0] if orders else None
+
+
+def create_order(headers, cart_document_id, email):
+    url = 'http://localhost:1337/api/orders'
+    payload = {
+        'data': {
+            'email': email,
+            'cart': cart_document_id,
+        }
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()['data']
+
+
+def update_order_email(headers, order_document_id, email):
+    url = f'http://localhost:1337/api/orders/{order_document_id}'
+    payload = {'data': {'email': email}}
+    response = requests.put(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()['data']

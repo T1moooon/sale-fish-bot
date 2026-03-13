@@ -10,6 +10,7 @@ from services.strapi import (
     get_cart_items,
     get_products,
     remove_product_from_cart,
+    save_order_email,
 )
 from storage.redis_state import get_database_connection
 
@@ -207,8 +208,12 @@ def handle_email(update, context):
     if not update.message or not update.message.text:
         return 'WAITING_EMAIL'
     email = update.message.text.strip()
-    print(f'Email for payment: {email}')
-    update.message.reply_text('Почта получена')
+    save_order_email(
+        env.str('STRAPI_API_TOKEN'),
+        update.message.chat_id,
+        email,
+    )
+    update.message.reply_text('Почта получена и сохранена')
     return 'HANDLE_CART'
 
 
