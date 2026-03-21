@@ -15,17 +15,11 @@ def get_products(token):
     return response.json()
 
 
-def get_or_create_cart(token, tg_id):
+def add_product_to_cart(token, tg_id, product_document_id, quantity_kg=1.0):
     headers = build_auth_headers(token)
     cart = get_cart_by_tg_id(headers, tg_id)
     if not cart:
-        return create_cart(headers, tg_id)
-    return cart
-
-
-def add_product_to_cart(token, tg_id, product_document_id, quantity_kg=1.0):
-    headers = build_auth_headers(token)
-    cart = get_or_create_cart(token, tg_id)
+        cart = create_cart(headers, tg_id)
     cart_item = get_cart_item(
         headers,
         cart['documentId'],
@@ -141,7 +135,9 @@ def delete_cart_item(headers, cart_item_document_id):
 
 def save_order_email(token, tg_id, email):
     headers = build_auth_headers(token)
-    cart = get_or_create_cart(token, tg_id)
+    cart = get_cart_by_tg_id(headers, tg_id)
+    if not cart:
+        cart = create_cart(headers, tg_id)
     order = get_order_by_cart_document_id(headers, cart['documentId'])
     if order:
         return update_order_email(headers, order['documentId'], email)
