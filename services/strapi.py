@@ -3,12 +3,8 @@ import requests
 from config import STRAPI_BASE_URL
 
 
-def build_auth_headers(token):
-    return {'Authorization': f'Bearer {token}'}
-
-
 def get_products(token):
-    headers = build_auth_headers(token)
+    headers = {'Authorization': f'Bearer {token}'}
     url = f'{STRAPI_BASE_URL}/api/products'
     response = requests.get(url, headers=headers, params={'populate': 'picture'})
     response.raise_for_status()
@@ -16,7 +12,7 @@ def get_products(token):
 
 
 def add_product_to_cart(token, tg_id, product_document_id, quantity_kg=1.0):
-    headers = build_auth_headers(token)
+    headers = {'Authorization': f'Bearer {token}'}
     cart = get_cart_by_tg_id(headers, tg_id)
     if not cart:
         cart = create_cart(headers, tg_id)
@@ -94,7 +90,7 @@ def update_cart_item(headers, cart_item_document_id, quantity_kg):
 
 
 def get_cart_items(token, tg_id):
-    headers = build_auth_headers(token)
+    headers = {'Authorization': f'Bearer {token}'}
     cart = get_cart_by_tg_id(headers, tg_id)
     if not cart:
         return []
@@ -110,7 +106,7 @@ def get_cart_items(token, tg_id):
 
 
 def remove_product_from_cart(token, tg_id, product_document_id):
-    headers = build_auth_headers(token)
+    headers = {'Authorization': f'Bearer {token}'}
     cart = get_cart_by_tg_id(headers, tg_id)
     if not cart:
         return
@@ -121,7 +117,7 @@ def remove_product_from_cart(token, tg_id, product_document_id):
 
 
 def clear_cart(token, tg_id):
-    headers = build_auth_headers(token)
+    headers = {'Authorization': f'Bearer {token}'}
     cart_items = get_cart_items(token, tg_id)
     for cart_item in cart_items:
         delete_cart_item(headers, cart_item['documentId'])
@@ -134,7 +130,7 @@ def delete_cart_item(headers, cart_item_document_id):
 
 
 def save_order_email(token, tg_id, email):
-    headers = build_auth_headers(token)
+    headers = {'Authorization': f'Bearer {token}'}
     cart = get_cart_by_tg_id(headers, tg_id)
     if not cart:
         cart = create_cart(headers, tg_id)
