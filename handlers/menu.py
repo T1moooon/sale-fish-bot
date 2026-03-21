@@ -238,8 +238,5 @@ def handle_users_reply(update, context):
         'WAITING_EMAIL': handle_email,
     }
     state_handler = states_functions[user_state]
-    try:
-        next_state = state_handler(update, context)
-        db.set(chat_id, next_state)
-    except Exception:
-        logger.exception('Ошибка в handle_users_reply')
+    next_state = state_handler(update, context)
+    db.set(chat_id, next_state)
